@@ -25,12 +25,17 @@
     overscroll-behavior: none;
   }
   body {
-    min-height: 100vh;
-    min-height: 100dvh;
+    height: 100vh;
+    height: 100dvh;
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
+  }
+  #app {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
   }
   button {
     font-family: inherit;
@@ -48,8 +53,8 @@
 
   /* ===== Screens ===== */
   .screen {
-    min-height: 100vh;
-    min-height: 100dvh;
+    flex: 1;
+    min-height: 0;
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -61,9 +66,10 @@
     max-width: 28rem;
     width: 100%;
     margin: 0 auto;
-    padding: 2.5rem 1.5rem 1.5rem;
+    padding: 1.5rem 1.25rem 1rem;
+    overflow-y: auto;
   }
-  .container-active { padding: 2rem 1.5rem 2rem; }
+  .container-active { padding: 1.25rem 1.25rem 1.5rem; }
 
   /* ===== Typography ===== */
   .kicker {
@@ -86,14 +92,14 @@
   .color-zinc-500{ color: #71717a; }
 
   /* ===== Idle view ===== */
-  .header { margin-bottom: 2rem; }
+  .header { margin-bottom: 1rem; }
 
   .card {
     background: #18181b;
     border: 1px solid #27272a;
     border-radius: 1.5rem;
-    padding: 1.25rem;
-    margin-bottom: 1.5rem;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
   }
 
   .stepper {
@@ -101,7 +107,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    padding: 0.75rem 0;
+    padding: 0.5rem 0;
     border-bottom: 1px solid #27272a;
   }
   .stepper:last-child { border-bottom: 0; }
@@ -149,7 +155,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 0 0.5rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.75rem;
   }
   .meta-text { color: #a1a1aa; font-size: 0.875rem; }
   .meta-text .mono { color: #fff; }
@@ -183,7 +189,7 @@
   .btn-start svg { width: 1.5rem; height: 1.5rem; }
 
   .presets {
-    margin-top: 2rem;
+    margin-top: 0.75rem;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 0.5rem;
@@ -219,7 +225,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
   }
   .round-num {
     color: #fff;
@@ -283,7 +289,7 @@
   }
 
   .controls {
-    margin-top: 2rem;
+    margin-top: 1.25rem;
     display: flex;
     align-items: center;
     justify-content: center;
