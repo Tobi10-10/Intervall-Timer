@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Intervall">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#09090b">
+<meta name="color-scheme" content="dark">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="icon" href="./apple-touch-icon.png">
+<link rel="manifest" href="./manifest.webmanifest">
+<title>Intervall-Timer</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: #09090b;
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+  }
+  body {
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  button {
+    font-family: inherit;
+    border: 0;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .mono { font-variant-numeric: tabular-nums; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+
+  /* ===== Screens ===== */
+  .screen {
+    min-height: 100vh;
+    min-height: 100dvh;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  .container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    max-width: 28rem;
+    width: 100%;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 1.5rem;
+  }
+  .container-active { padding: 2rem 1.5rem 2rem; }
+
+  /* ===== Typography ===== */
+  .kicker {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+    font-weight: 700;
+  }
+  .title {
+    color: #fff;
+    font-size: 2.25rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    margin: 0.25rem 0 0 0;
+  }
+  .color-emerald { color: #34d399; }
+  .color-amber   { color: #fbbf24; }
+  .color-sky     { color: #38bdf8; }
+  .color-zinc    { color: #a1a1aa; }
+  .color-zinc-500{ color: #71717a; }
+
+  /* ===== Idle view ===== */
+  .header { margin-bottom: 2rem; }
+
+  .card {
+    background: #18181b;
+    border: 1px solid #27272a;
+    border-radius: 1.5rem;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .stepper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #27272a;
+  }
+  .stepper:last-child { border-bottom: 0; }
+  .stepper-info { flex: 1; }
+  .stepper-label {
+    color: #a1a1aa;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+  }
+  .stepper-value {
+    color: #fff;
+    font-size: 1.875rem;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+    margin-top: 0.25rem;
+  }
+  .stepper-unit {
+    color: #71717a;
+    font-size: 1rem;
+    margin-left: 0.25rem;
+  }
+  .stepper-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .step-btn {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 9999px;
+    background: #27272a;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.1s;
+  }
+  .step-btn:active { background: #3f3f46; }
+  .step-btn svg { width: 1.25rem; height: 1.25rem; display: block; }
+
+  .meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .meta-text { color: #a1a1aa; font-size: 0.875rem; }
+  .meta-text .mono { color: #fff; }
+  .sound-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #d4d4d8;
+    font-size: 0.875rem;
+  }
+  .sound-toggle:active { color: #fff; }
+  .sound-toggle svg { width: 1.25rem; height: 1.25rem; display: block; }
+  .sound-toggle.is-off svg { color: #71717a; }
+
+  .btn-start {
+    width: 100%;
+    background: #10b981;
+    color: #09090b;
+    font-weight: 700;
+    font-size: 1.25rem;
+    padding: 1.25rem;
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.2);
+    transition: background 0.1s;
+  }
+  .btn-start:active { background: #059669; }
+  .btn-start svg { width: 1.5rem; height: 1.5rem; }
+
+  .presets {
+    margin-top: 2rem;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+  .preset {
+    background: #18181b;
+    border: 1px solid #27272a;
+    border-radius: 0.75rem;
+    padding: 0.75rem 0.5rem;
+    text-align: center;
+    transition: background 0.1s;
+  }
+  .preset:active { background: #27272a; }
+  .preset-name {
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.875rem;
+  }
+  .preset-detail {
+    color: #71717a;
+    font-size: 0.75rem;
+    margin-top: 0.125rem;
+  }
+
+  /* ===== Active view ===== */
+  .active-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+  .round-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+  }
+  .round-num {
+    color: #fff;
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+  .round-total { color: #52525b; }
+  .paused-indicator {
+    color: #a1a1aa;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .timer-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .timer-circle {
+    position: relative;
+    width: 320px;
+    height: 320px;
+    max-width: 100%;
+  }
+  .ring-svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+  }
+  .ring-bg { stroke: #27272a; }
+  .ring-fg {
+    transition: stroke-dashoffset 0.1s linear;
+  }
+  .ring-fg.color-emerald { stroke: #34d399; }
+  .ring-fg.color-amber   { stroke: #fbbf24; }
+
+  .timer-text-wrap {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .time-display {
+    color: #fff;
+    font-weight: 700;
+    font-size: 6rem;
+    line-height: 1;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+  .time-label {
+    color: #71717a;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+    margin-top: 0.75rem;
+  }
+
+  .controls {
+    margin-top: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+  }
+  .ctrl-btn {
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.1s, opacity 0.1s;
+  }
+  .ctrl-secondary {
+    width: 4rem;
+    height: 4rem;
+    background: #27272a;
+    color: #fff;
+  }
+  .ctrl-secondary:active { background: #3f3f46; }
+  .ctrl-secondary svg { width: 1.5rem; height: 1.5rem; }
+  .ctrl-primary {
+    flex: 1;
+    height: 4rem;
+    color: #09090b;
+    font-weight: 700;
+    font-size: 1.125rem;
+    gap: 0.75rem;
+  }
+  .ctrl-primary.color-emerald { background: #10b981; }
+  .ctrl-primary.color-amber   { background: #f59e0b; }
+  .ctrl-primary:active { opacity: 0.9; }
+  .ctrl-primary svg { width: 1.5rem; height: 1.5rem; }
+
+  /* ===== Done view ===== */
+  .screen-done {
+    align-items: center;
+    justify-content: center;
+    padding: 0 1.5rem;
+  }
+  .done-title {
+    color: #fff;
+    font-size: 3.75rem;
+    font-weight: 700;
+    margin-top: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  .done-subtitle {
+    color: #a1a1aa;
+    font-size: 1.125rem;
+    margin-bottom: 3rem;
+  }
+  .btn-back {
+    width: 100%;
+    max-width: 18rem;
+    background: #fff;
+    color: #09090b;
+    font-weight: 700;
+    font-size: 1.125rem;
+    padding: 1rem;
+    border-radius: 1rem;
+    transition: background 0.1s;
+  }
+  .btn-back:active { background: #e4e4e7; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(() => {
+  'use strict';
+
+  const app = document.getElementById('app');
+  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+  /* ============================================================
+   * State and refs
+   * ============================================================ */
+  const state = {
+    workDuration: 20,
+    restDuration: 10,
+    totalRounds: 8,
+    soundEnabled: true,
+    phase: 'idle',          // idle | work | rest | done
+    currentRound: 1,
+    remaining: 0,           // milliseconds
+    isPaused: false,
+  };
+
+  const refs = {
+    phaseEndTime: null,
+    remainingOnPause: null,
+    rafId: null,
+    lastBeepSecond: null,
+    audioCtx: null,
+    wakeLock: null,
+  };
+
+  /* ============================================================
+   * Persistence (localStorage)
+   * ============================================================ */
+  const SETTINGS_KEY = 'intervalTimer:settings';
+
+  function loadSettings() {
+    try {
+      const raw = localStorage.getItem(SETTINGS_KEY);
+      if (!raw) return;
+      const s = JSON.parse(raw);
+      if (Number.isFinite(s.workDuration)) state.workDuration = s.workDuration;
+      if (Number.isFinite(s.restDuration)) state.restDuration = s.restDuration;
+      if (Number.isFinite(s.totalRounds))  state.totalRounds  = s.totalRounds;
+      if (typeof s.soundEnabled === 'boolean') state.soundEnabled = s.soundEnabled;
+    } catch (e) { /* ignore */ }
+  }
+
+  function saveSettings() {
+    if (state.phase !== 'idle') return;
+    try {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+        workDuration: state.workDuration,
+        restDuration: state.restDuration,
+        totalRounds:  state.totalRounds,
+        soundEnabled: state.soundEnabled,
+      }));
+    } catch (e) { /* ignore */ }
+  }
+
+  /* ============================================================
+   * Audio – Web Audio API with synthesized tones
+   * Fully offline: no audio files required.
+   * Includes iOS audio unlock (silent buffer played on first gesture).
+   * ============================================================ */
+  function initAudio() {
+    if (!refs.audioCtx) {
+      try {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (Ctx) {
+          refs.audioCtx = new Ctx();
+          // iOS unlock: play a silent buffer to enable subsequent audio
+          try {
+            const buffer = refs.audioCtx.createBuffer(1, 1, 22050);
+            const src = refs.audioCtx.createBufferSource();
+            src.buffer = buffer;
+            src.connect(refs.audioCtx.destination);
+            src.start(0);
+          } catch (e) { /* ignore */ }
+        }
+      } catch (e) { /* ignore */ }
+    }
+    if (refs.audioCtx && refs.audioCtx.state === 'suspended') {
+      refs.audioCtx.resume().catch(() => {});
+    }
+  }
+
+  function tone(freq, duration, volume = 0.4, startOffset = 0) {
+    const ctx = refs.audioCtx;
+    if (!ctx || !state.soundEnabled) return;
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const t = ctx.currentTime + startOffset;
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(volume, t + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+      osc.start(t);
+      osc.stop(t + duration + 0.05);
+    } catch (e) { /* ignore */ }
+  }
+
+  const playCountdown = () => tone(880, 0.12, 0.3);
+  const playWorkEnd   = () => tone(523.25, 0.5, 0.5);   // C5 – lower, signals rest
+  const playRestEnd   = () => tone(1046.5, 0.5, 0.5);   // C6 – higher, signals work
+  const playDone      = () => {
+    [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone(f, 0.4, 0.45, i * 0.18));
+  };
+
+  /* ============================================================
+   * Wake Lock (keep screen on during workout)
+   * ============================================================ */
+  async function requestWakeLock() {
+    try {
+      if ('wakeLock' in navigator && !refs.wakeLock) {
+        refs.wakeLock = await navigator.wakeLock.request('screen');
+        if (refs.wakeLock && refs.wakeLock.addEventListener) {
+          refs.wakeLock.addEventListener('release', () => { refs.wakeLock = null; });
+        }
+      }
+    } catch (e) { /* not critical */ }
+  }
+
+  async function releaseWakeLock() {
+    try {
+      if (refs.wakeLock) {
+        await refs.wakeLock.release();
+        refs.wakeLock = null;
+      }
+    } catch (e) { /* ignore */ }
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible'
+        && (state.phase === 'work' || state.phase === 'rest')
+        && !state.isPaused) {
+      requestWakeLock();
+      if (refs.audioCtx && refs.audioCtx.state === 'suspended') {
+        refs.audioCtx.resume().catch(() => {});
+      }
+    }
+  });
+
+  /* ============================================================
+   * Timer logic
+   * ============================================================ */
+  function startPhase(newPhase, durationSec) {
+    refs.phaseEndTime = performance.now() + durationSec * 1000;
+    refs.lastBeepSecond = null;
+    state.remaining = durationSec * 1000;
+    state.phase = newPhase;
+    render();
+    startTickLoop();
+  }
+
+  function handlePhaseComplete() {
+    if (state.phase === 'work') {
+      if (state.currentRound >= state.totalRounds) {
+        playDone();
+        state.phase = 'done';
+        state.remaining = 0;
+        releaseWakeLock();
+        render();
+      } else {
+        playWorkEnd();
+        startPhase('rest', state.restDuration);
+      }
+    } else if (state.phase === 'rest') {
+      playRestEnd();
+      state.currentRound += 1;
+      startPhase('work', state.workDuration);
+    }
+  }
+
+  function tick() {
+    if (refs.phaseEndTime == null) return;
+    const now = performance.now();
+    const remMs = Math.max(0, refs.phaseEndTime - now);
+    state.remaining = remMs;
+
+    const remSec = Math.ceil(remMs / 1000);
+    if (refs.lastBeepSecond !== null
+        && remSec !== refs.lastBeepSecond
+        && remSec > 0
+        && remSec <= 3) {
+      playCountdown();
+    }
+    refs.lastBeepSecond = remSec;
+
+    updateTimerDisplay();
+
+    if (remMs <= 0) {
+      handlePhaseComplete();
+    } else {
+      refs.rafId = requestAnimationFrame(tick);
+    }
+  }
+
+  function startTickLoop() {
+    if ((state.phase === 'work' || state.phase === 'rest') && !state.isPaused) {
+      if (refs.rafId) cancelAnimationFrame(refs.rafId);
+      refs.rafId = requestAnimationFrame(tick);
+    }
+  }
+
+  function stopTickLoop() {
+    if (refs.rafId) {
+      cancelAnimationFrame(refs.rafId);
+      refs.rafId = null;
+    }
+  }
+
+  /* Targeted DOM update for the timer display (smooth, no re-render) */
+  function updateTimerDisplay() {
+    const timeEl = document.getElementById('time-display');
+    const ringEl = document.getElementById('progress-ring');
+    if (!timeEl || !ringEl) return;
+    timeEl.textContent = formatTime(state.remaining);
+    const totalDuration = state.phase === 'work' ? state.workDuration
+                       : state.phase === 'rest' ? state.restDuration : 1;
+    const progress = clamp(1 - (state.remaining / 1000) / totalDuration, 0, 1);
+    const radius = 140;
+    const circumference = 2 * Math.PI * radius;
+    ringEl.setAttribute('stroke-dashoffset', String(circumference * progress));
+  }
+
+  /* ============================================================
+   * Controls
+   * ============================================================ */
+  function handleStart() {
+    initAudio();
+    requestWakeLock();
+    state.currentRound = 1;
+    state.isPaused = false;
+    startPhase('work', state.workDuration);
+  }
+
+  function handlePauseResume() {
+    if (state.isPaused) {
+      refs.phaseEndTime = performance.now() + (refs.remainingOnPause ?? 0);
+      refs.remainingOnPause = null;
+      refs.lastBeepSecond = null;
+      state.isPaused = false;
+      requestWakeLock();
+      render();
+      startTickLoop();
+    } else {
+      refs.remainingOnPause = Math.max(0, (refs.phaseEndTime ?? performance.now()) - performance.now());
+      stopTickLoop();
+      state.isPaused = true;
+      render();
+    }
+  }
+
+  function handleStop() {
+    stopTickLoop();
+    refs.phaseEndTime = null;
+    refs.remainingOnPause = null;
+    state.isPaused = false;
+    state.remaining = 0;
+    state.currentRound = 1;
+    state.phase = 'idle';
+    releaseWakeLock();
+    render();
+  }
+
+  function handleSkip() {
+    refs.phaseEndTime = performance.now();
+    if (state.isPaused) {
+      refs.remainingOnPause = 0;
+      state.isPaused = false;
+      render();
+      startTickLoop();
+    }
+  }
+
+  /* ============================================================
+   * Helpers
+   * ============================================================ */
+  function formatTime(ms) {
+    const totalSec = Math.ceil(ms / 1000);
+    const m = Math.floor(totalSec / 60);
+    const s = totalSec % 60;
+    if (m > 0) return `${m}:${String(s).padStart(2, '0')}`;
+    return String(s);
+  }
+
+  function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
+
+  /* ============================================================
+   * Icons (inline SVG, lucide-style)
+   * ============================================================ */
+  const icons = {
+    play:    '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>',
+    pause:   '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>',
+    square:  '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>',
+    skip:    '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>',
+    plus:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>',
+    minus:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>',
+    volume:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>',
+    volumeX: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="22" y1="9" x2="16" y2="15"/><line x1="16" y1="9" x2="22" y2="15"/></svg>',
+  };
+
+  /* ============================================================
+   * Rendering
+   * ============================================================ */
+  function stepperHtml(label, unit, value, key, min, max) {
+    return `
+      <div class="stepper">
+        <div class="stepper-info">
+          <div class="stepper-label">${label}</div>
+          <div class="stepper-value">${value}<span class="stepper-unit">${unit}</span></div>
+        </div>
+        <div class="stepper-buttons">
+          <button class="step-btn" data-stepper="${key}" data-delta="-1" data-min="${min}" data-max="${max}" aria-label="Verringern">${icons.minus}</button>
+          <button class="step-btn" data-stepper="${key}" data-delta="1"  data-min="${min}" data-max="${max}" aria-label="Erhöhen">${icons.plus}</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderIdle() {
+    const totalSec = (state.workDuration + state.restDuration) * state.totalRounds - state.restDuration;
+    const totalMin = Math.floor(totalSec / 60);
+    const totalRem = totalSec % 60;
+    return `
+      <div class="screen">
+        <div class="container">
+          <div class="header">
+            <div class="kicker color-emerald">Interval</div>
+            <h1 class="title">Trainings-Timer</h1>
+          </div>
+
+          <div class="card">
+            ${stepperHtml('Belastung',     'Sek.', state.workDuration, 'workDuration', 1, 600)}
+            ${stepperHtml('Pause',         'Sek.', state.restDuration, 'restDuration', 0, 600)}
+            ${stepperHtml('Wiederholungen','x',    state.totalRounds,  'totalRounds',  1, 99)}
+          </div>
+
+          <div class="meta-row">
+            <div class="meta-text">Gesamtdauer: <span class="mono">${totalMin}:${String(totalRem).padStart(2, '0')}</span></div>
+            <button class="sound-toggle ${state.soundEnabled ? '' : 'is-off'}" data-action="toggleSound" aria-label="Ton umschalten">
+              ${state.soundEnabled ? icons.volume : icons.volumeX}
+              <span>${state.soundEnabled ? 'Ton an' : 'Ton aus'}</span>
+            </button>
+          </div>
+
+          <button class="btn-start" data-action="start">
+            ${icons.play}
+            Start
+          </button>
+
+          <div class="presets">
+            <button class="preset" data-preset="20,10,8"><div class="preset-name">Tabata</div><div class="preset-detail">20/10 · 8x</div></button>
+            <button class="preset" data-preset="30,15,10"><div class="preset-name">30/15</div><div class="preset-detail">30/15 · 10x</div></button>
+            <button class="preset" data-preset="45,15,8"><div class="preset-name">45/15</div><div class="preset-detail">45/15 · 8x</div></button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderActive() {
+    const themeMap = {
+      work: { color: 'emerald', label: 'BELASTUNG' },
+      rest: { color: 'amber',   label: 'PAUSE' },
+    };
+    const theme = themeMap[state.phase];
+    const totalDuration = state.phase === 'work' ? state.workDuration : state.restDuration;
+    const radius = 140;
+    const circumference = 2 * Math.PI * radius;
+    const progress = clamp(1 - (state.remaining / 1000) / totalDuration, 0, 1);
+
+    return `
+      <div class="screen">
+        <div class="container container-active">
+          <div class="active-head">
+            <div class="kicker color-zinc-500">Runde</div>
+            <div class="kicker color-${theme.color}">${theme.label}</div>
+          </div>
+          <div class="round-row">
+            <div class="round-num mono">${state.currentRound}<span class="round-total"> / ${state.totalRounds}</span></div>
+            ${state.isPaused ? '<div class="paused-indicator">Pausiert</div>' : ''}
+          </div>
+
+          <div class="timer-wrap">
+            <div class="timer-circle">
+              <svg class="ring-svg" viewBox="0 0 320 320">
+                <circle cx="160" cy="160" r="${radius}" class="ring-bg" stroke-width="14" fill="none"/>
+                <circle id="progress-ring" cx="160" cy="160" r="${radius}" class="ring-fg color-${theme.color}"
+                        stroke-width="14" fill="none" stroke-linecap="round"
+                        stroke-dasharray="${circumference}" stroke-dashoffset="${circumference * progress}"/>
+              </svg>
+              <div class="timer-text-wrap">
+                <div id="time-display" class="time-display">${formatTime(state.remaining)}</div>
+                <div class="time-label">Sekunden</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="controls">
+            <button class="ctrl-btn ctrl-secondary" data-action="stop" aria-label="Stopp">${icons.square}</button>
+            <button class="ctrl-btn ctrl-primary color-${theme.color}" data-action="pauseResume" aria-label="${state.isPaused ? 'Fortsetzen' : 'Pause'}">
+              ${state.isPaused ? icons.play + '<span>Weiter</span>' : icons.pause + '<span>Pause</span>'}
+            </button>
+            <button class="ctrl-btn ctrl-secondary" data-action="skip" aria-label="Überspringen">${icons.skip}</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderDone() {
+    return `
+      <div class="screen screen-done">
+        <div class="kicker color-sky">Workout</div>
+        <div class="done-title">Fertig!</div>
+        <div class="done-subtitle">${state.totalRounds} Runden abgeschlossen</div>
+        <button class="btn-back" data-action="stop">Zurück</button>
+      </div>
+    `;
+  }
+
+  function render() {
+    let html;
+    if (state.phase === 'idle') html = renderIdle();
+    else if (state.phase === 'done') html = renderDone();
+    else html = renderActive();
+    app.innerHTML = html;
+    attachListeners();
+  }
+
+  function attachListeners() {
+    $$('[data-action]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const a = e.currentTarget.dataset.action;
+        if (a === 'start')        handleStart();
+        else if (a === 'pauseResume') handlePauseResume();
+        else if (a === 'stop')    handleStop();
+        else if (a === 'skip')    handleSkip();
+        else if (a === 'toggleSound') {
+          state.soundEnabled = !state.soundEnabled;
+          saveSettings();
+          render();
+        }
+      });
+    });
+
+    $$('[data-stepper]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const k   = e.currentTarget.dataset.stepper;
+        const d   = parseInt(e.currentTarget.dataset.delta, 10);
+        const min = parseInt(e.currentTarget.dataset.min, 10);
+        const max = parseInt(e.currentTarget.dataset.max, 10);
+        state[k] = clamp(state[k] + d, min, max);
+        saveSettings();
+        render();
+      });
+    });
+
+    $$('[data-preset]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const [w, r, n] = e.currentTarget.dataset.preset.split(',').map(Number);
+        state.workDuration = w;
+        state.restDuration = r;
+        state.totalRounds  = n;
+        saveSettings();
+        render();
+      });
+    });
+  }
+
+  /* ============================================================
+   * Service Worker registration (for offline support after first load)
+   * ============================================================ */
+  function registerServiceWorker() {
+    if (!('serviceWorker' in navigator)) return;
+    // Only attempt over secure context (http://localhost or https://)
+    if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') return;
+    try {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => { /* not critical */ });
+      });
+    } catch (e) { /* ignore */ }
+  }
+
+  /* ============================================================
+   * Init
+   * ============================================================ */
+  // Expose internals for tests in non-browser environments (no-op in browsers)
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { state, refs, formatTime, clamp, loadSettings, saveSettings };
+  }
+
+  loadSettings();
+  render();
+  registerServiceWorker();
+})();
+</script>
+</body>
+</html>
