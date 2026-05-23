@@ -8,7 +8,7 @@
  * for the new version to be picked up.
  */
 
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const CACHE_NAME    = `intervall-timer-${CACHE_VERSION}`;
 
 const ASSETS = [
